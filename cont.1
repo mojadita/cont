@@ -15,7 +15,9 @@
 .Op Ar arguments ...
 .Sh DESCRIPTION
 The
-.Nm command allows to execute repeatedly a program
+.Nm cont
+allows to execute repeatedly a program
+.Em command
 until some fixed number of times, or until it is interrupted
 by the user, by killing it or by hitting the interrupt key at
 the terminal.
@@ -48,8 +50,10 @@ If not used, the program runs until stopped by an interruption.
 .Fl t Ar delay_us
 permits to run the program with an inter execution delay
 of
-.Ar delay_us microsecond granularity.  The number is expressed
-as a floating point number of seconds (decimals allowed).
+.Ar delay_us
+microsecond granularity.
+The number is expressed as a floating point number of seconds
+(decimals allowed).
 .It
 .Fl v
 means be verbose.
