@@ -12,8 +12,8 @@ all: $(targets)
 clean:
 	rm -f $(toclean)
 install:
-	$(INSTALL) $(IFLAGS) cont $(bindir)/cont
-	$(INSTALL) $(IFLAGS) cont.1 $(man1)/cont.1
+	-$(INSTALL) $(IFLAGS) cont $(bindir)/cont
+	-$(INSTALL) $(IFLAGS) cont.1 $(man1)/cont.1
 
 .for t in $(targets)
 toclean += $t $($t_objs)
