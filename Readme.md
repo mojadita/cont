@@ -1,4 +1,4 @@
-!!! CONT: program to execute a command continously.
+### CONT: program to execute a command continously.
 
 This simple program executes another (indicated as parameters to the program)
 continously (using a delay between executions) until a number of executions is
