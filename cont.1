@@ -1,0 +1,72 @@
+.Dd $Mdocdate$
+.Dt CONT 1
+.OS
+.Sh NAME
+.Nm cont
+.Nd a program to run another command continually.
+.Sh SYNOPSIS
+.Nm cont
+.Op Fl V
+.Op Fl e
+.Op Fl n Ar times
+.Op Fl t Ar delay_us
+.Op Fl v
+.Ar command
+.Op Ar arguments ...
+.Sh DESCRIPTION
+The
+.Nm command allows to execute repeatedly a program
+until some fixed number of times, or until it is interrupted
+by the user, by killing it or by hitting the interrupt key at
+the terminal.
+The different options modify the behaviour of
+the program.  In case you have the necessity of executing a
+command that begins with
+.Li -
+you will have to end the options list with the normal
+.Li --
+sequence.
+This will separate command options from the command to execute.
+.Bl
+.It
+.Fl V
+shows the program version and usage screen.
+.It
+.Fl e
+makes the command to be executed without intervening escape
+sequences (this will make output to accumulate to the
+bottom without any back movement of the cursor to repeat the
+output)
+.It
+.Fl n Ar times
+makes the command to execute
+.Ar times
+times the command and stop.
+Default is to run indefinitely without stopping.
+If not used, the program runs until stopped by an interruption.
+.It
+.Fl t Ar delay_us
+permits to run the program with an inter execution delay
+of
+.Ar delay_us microsecond granularity.  The number is expressed
+as a floating point number of seconds (decimals allowed).
+.It
+.Fl v
+means be verbose.
+.Pp
+The program prints at te beginning on
+.Em stderr
+the command and command arguments about to execute.
+At the end of the execution (normal or interrupted)
+the program prints the number of executions and the total
+number of lines printed.
+.Pp
+The escape sequences interspersed to achieve the writing on top
+of previous execution are ANSI escape codes for going back N lines
+(emitted between runs),
+delete from cursor to end of line (emited at the end of each line)
+and delete from cursor to end of screen (emited at the end of the
+run).
+.Sh AUTHOR
+.An "Luis Colorado"
+.El

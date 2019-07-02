@@ -15,6 +15,7 @@
 #define FLAG_DELAY		(1<<2)
 #define FLAG_NTIMES		(1<<3)
 #define FLAG_STOP		(1<<4)
+#define FLAG_NOESCAPES	(1<<5)
 
 int flags = 0;
 useconds_t delay = 1000000;
@@ -69,12 +70,17 @@ ssize_t loop(int argc_unused, char **argv)
 			if (c == '\n') {
 				lines++;
 				fflush(stdout);
-				fputs("\033[K", stderr);
-				fflush(stderr);
+				if (!(flags & FLAG_NOESCAPES)) {
+					fputs("\033[K", stderr);
+					fflush(stderr);
+				}
 			}
 			putc(c, stdout);
 		}
-		fputs("\033[J", stderr);
+		if (!(flags & FLAG_NOESCAPES)) {
+			fputs("\033[J", stderr);
+			fflush(stderr);
+		}
 		wait(NULL);
 		return lines;
 	}
@@ -86,7 +92,7 @@ int main(int argc, char **argv)
 	int opt;
 	float t;
 
-	while ((opt = getopt(argc, argv, "t:Vvn:")) >= 0) {
+	while ((opt = getopt(argc, argv, "t:Vvn:e")) >= 0) {
 		switch(opt) {
 		case 't': flags |= FLAG_DELAY;
 				  t = atof(optarg);
@@ -97,6 +103,8 @@ int main(int argc, char **argv)
 				  break;
 		case 'n': flags |= FLAG_NTIMES;
 				  ntimes = atoi(optarg);
+				  break;
+		case 'e': flags |= FLAG_NOESCAPES;
 				  break;
 		/* ... */
 		}
@@ -139,7 +147,10 @@ int main(int argc, char **argv)
 	while(cont && (!(flags & FLAG_NTIMES) || ntimes--)) {
 
 		/* move up as many lines as input from subcommand */
-		if (n) fprintf(stderr, "\r\033[%ldA", n);
+		if (n && !(flags & FLAG_NOESCAPES)) {
+			fprintf(stderr, "\r\033[%ldA", n);
+			fflush(stderr);
+		}
 
 		n = loop(argc, argv);
 
