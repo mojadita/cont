@@ -4,6 +4,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -13,10 +14,18 @@
 #define FLAG_VERSION	(1<<1)
 #define FLAG_DELAY		(1<<2)
 #define FLAG_NTIMES		(1<<3)
+#define FLAG_STOP		(1<<4)
 
 int flags = 0;
 useconds_t delay = 1000000;
 size_t ntimes;
+
+volatile int cont = 1;
+
+void handler()
+{
+	cont = 0;
+}
 
 void doVersion(void)
 {
@@ -101,9 +110,15 @@ int main(int argc, char **argv)
 	argc -= optind; /* adjust the number of parameters. */
 	argv += optind; /* advance the pointer to the proper place */
 
+	if (!argc) {
+		fprintf(stderr, F("ERROR: no command specified\n"));
+		exit(EXIT_FAILURE);
+	}
+
 	if (flags & FLAG_VERBOSE) {
-		char *sep = "About to execute:";
+		char *sep = "About to execute: ";
 		int i;
+		fprintf(stderr, F(""));
 		for (i = 0; i < argc; i++) {
 			fprintf(stderr, "%s%s", sep, argv[i]);
 			sep = " ";
@@ -115,9 +130,13 @@ int main(int argc, char **argv)
 		delay = t * 1.0E6;
 	}
 
+	signal(SIGINT, handler);
+	signal(SIGHUP, handler);
+
 	size_t total_lines = 0;
+	size_t total_execs = 0;
 	ssize_t n = 0;
-	while(!(flags & FLAG_NTIMES) || ntimes--) {
+	while(cont && (!(flags & FLAG_NTIMES) || ntimes--)) {
 
 		/* move up as many lines as input from subcommand */
 		if (n) fprintf(stderr, "\r\033[%ldA", n);
@@ -132,11 +151,15 @@ int main(int argc, char **argv)
 		usleep(delay);
 
 		total_lines += n;
+		total_execs++;
 	}
 	if (flags & FLAG_VERBOSE) {
 		fprintf(stderr,
 			F("Total lines: %lu\n"),
-			total_lines);
+			total_lines); 
+		fprintf(stderr,
+			F("Total execs: %lu\n"),
+			total_execs);
 	}
 	exit(EXIT_SUCCESS);
 }
