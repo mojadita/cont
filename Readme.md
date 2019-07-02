@@ -14,6 +14,16 @@ It follows each line with an ANSI escape to erase from that point to the
 end of the screen line.  After execution, it emits another ANSI escape to
 erase from that line to the end of the screen.
 
+In normal use, you should specify the command and command line arguments
+at the end of the `cont` command, e.g.  To execute each half second a `ps`
+command, or a clock using the `date(1)` command:
+
+    $ cont -t 0.5 px x
+
+or
+
+    $ cont date "+%H:%M:%S"
+
 In case you want to run a pipeline, run it using a shell, as in the following
 example:
 
