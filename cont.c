@@ -51,7 +51,7 @@ ssize_t loop(int argc_unused, char **argv)
 		return -1;
 	} else if (res == 0) { /* child */
 		close(fd[0]); /* not going to use it */
-		dup2(fd[1], 1); /* redirect output to pipe */
+		dup2( fd[1], 1); /* redirect output to pipe */
 		close(fd[1]);
 
 		execvp(argv[0], argv);
@@ -59,7 +59,7 @@ ssize_t loop(int argc_unused, char **argv)
 		fprintf(stderr,
 			F("execv: ERROR %d: %s\n"),
 			errno, strerror(errno));
-		return -1;
+		exit(EXIT_FAILURE);
 	} else { /* parent */
 		pid_t cld_pid = res;
 		close(fd[1]); /* no writing to the pipe */
@@ -82,6 +82,7 @@ ssize_t loop(int argc_unused, char **argv)
 			fflush(stderr);
 		}
 		wait(NULL);
+		fclose(f);
 		return lines;
 	}
 
@@ -148,7 +149,7 @@ int main(int argc, char **argv)
 
 		/* move up as many lines as input from subcommand */
 		if (n && !(flags & FLAG_NOESCAPES)) {
-			fprintf(stderr, "\r\033[%ldA", n);
+			fprintf(stderr, "\r\033[%uA", (unsigned) n);
 			fflush(stderr);
 		}
 
@@ -167,10 +168,10 @@ int main(int argc, char **argv)
 	if (flags & FLAG_VERBOSE) {
 		fprintf(stderr,
 			F("Total lines: %lu\n"),
-			total_lines); 
+			(unsigned long) total_lines); 
 		fprintf(stderr,
 			F("Total execs: %lu\n"),
-			total_execs);
+			(unsigned long) total_execs);
 	}
 	exit(EXIT_SUCCESS);
 }
