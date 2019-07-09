@@ -1,3 +1,10 @@
+/* cont -- program to execute continously a program.
+ * Author: Luis Colorado <luiscoloradourcola@gmail.com>
+ * Date: Tue Jul  9 08:25:53 EEST 2019
+ * Copyright: (C) 2019 LUIS COLORADO.  All rights reserved.
+ * License: BSD
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <getopt.h>
@@ -49,7 +56,7 @@ ssize_t loop(int argc_unused, char **argv)
 			errno,
 			strerror(errno));
 		return -1;
-	} else if (res == 0) { /* child */
+	} else if (res == 0) { /* CHILD PROCESS */
 		close(fd[0]); /* not going to use it */
 		dup2( fd[1], 1); /* redirect output to pipe */
 		close(fd[1]);
@@ -60,17 +67,18 @@ ssize_t loop(int argc_unused, char **argv)
 			F("execv: ERROR %d: %s\n"),
 			errno, strerror(errno));
 		exit(EXIT_FAILURE);
-	} else { /* parent */
+	} else { /* PARENT PROCESS */
 		pid_t cld_pid = res;
 		close(fd[1]); /* no writing to the pipe */
 		FILE *f = fdopen(fd[0], "rt"); /* just reading */
 		int c;
-		size_t lines = 0;
+		size_t lines = 0; /* need to count lines */
 		while((c = fgetc(f)) != EOF) {
 			if (c == '\n') {
 				lines++;
 				fflush(stdout);
 				if (!(flags & FLAG_NOESCAPES)) {
+					/* DELETE TO END OF LINE */
 					fputs("\033[K", stderr);
 					fflush(stderr);
 				}
@@ -78,14 +86,23 @@ ssize_t loop(int argc_unused, char **argv)
 			putc(c, stdout);
 		}
 		if (!(flags & FLAG_NOESCAPES)) {
+			/* DELETE TO END OF SCREEN */
 			fputs("\033[J", stderr);
 			fflush(stderr);
 		}
-		wait(NULL);
-		fclose(f);
-		return lines;
+		int status;
+		wait(&status);
+		fclose(f); /* should close fd[1] */
+		if (   WIFEXITED(status)
+			&& WEXITSTATUS(status) == EXIT_SUCCESS) {
+			return lines;
+		} else {
+			fprintf(stderr,
+				F("child process exited with code = %d\n"),
+				WEXITSTATUS(status));
+			return -1;
+		}
 	}
-
 } /* loop */
 
 int main(int argc, char **argv)
@@ -174,4 +191,4 @@ int main(int argc, char **argv)
 			(unsigned long) total_execs);
 	}
 	exit(EXIT_SUCCESS);
-}
+} /* main */
