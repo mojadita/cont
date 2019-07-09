@@ -17,6 +17,10 @@
 
 #define F(_fmt) "%s:%d: " _fmt, __FILE__, __LINE__
 
+#ifndef VERSION
+#error set VERSION in makefile
+#endif
+
 #define FLAG_VERBOSE	(1<<0)
 #define FLAG_VERSION	(1<<1)
 #define FLAG_DELAY		(1<<2)
@@ -38,9 +42,24 @@ void handler()
 void doVersion(void)
 {
 	fprintf(stderr, 
-		"cont: v1.0\n"
-		"(C) Luis Colorado.  All rights reserved.\n"
-		"License: BSD\n");
+		"cont: " VERSION "\n"
+		"  (C) 2019 Luis Colorado.  All rights reserved.\n"
+		"  License: BSD\n"
+		"Usage: cont [ -Vev ] [ -n num ] [ -t timespec ] command [ args ... ]\n"
+		"Where:\n"
+		"  -V indicates to show the version string for the program.  It shows\n"
+		"     this screen.\n"
+		"  -e disables the output of escape sequences.  The program limits to\n"
+		"     execute and pass the whole output to stdout.  No interspersion\n"
+		"     of escapes is done.\n"
+		"  -v Be verbose.  The program output on stderr the command about to \n"
+		"     be executed, and once it end (after all executions) shows the\n"
+		"     total number of lines and executions that has made.\n"
+		"  -n makes only `num' executions and ends after all.  If not\n"
+		"     specified, the program runs until it is interrupted by a signal.\n"
+		"  -t Allows to set a different time between runs.  timespec is\n"
+		"     specified as a decimal number of seconds (dot and decimals is\n"
+		"     allowed) with a usec resolution.\n");
 	exit(EXIT_SUCCESS);
 }
 
@@ -111,19 +130,19 @@ int main(int argc, char **argv)
 	int opt;
 	float t;
 
-	while ((opt = getopt(argc, argv, "t:Vvn:e")) >= 0) {
+	while ((opt = getopt(argc, argv, "Ven:t:v")) >= 0) {
 		switch(opt) {
-		case 't': flags |= FLAG_DELAY;
-				  t = atof(optarg);
-				  break;
 		case 'V': flags |= FLAG_VERSION;
 				  break;
-		case 'v': flags |= FLAG_VERBOSE;
+		case 'e': flags |= FLAG_NOESCAPES;
 				  break;
 		case 'n': flags |= FLAG_NTIMES;
 				  ntimes = atoi(optarg);
 				  break;
-		case 'e': flags |= FLAG_NOESCAPES;
+		case 't': flags |= FLAG_DELAY;
+				  t = atof(optarg);
+				  break;
+		case 'v': flags |= FLAG_VERBOSE;
 				  break;
 		/* ... */
 		}

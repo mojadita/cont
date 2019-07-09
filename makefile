@@ -4,6 +4,8 @@ bindir ?= $(prefix)/bin
 mandir ?= $(prefix)/man
 man1   ?= $(mandir)/man1
 
+CFLAGS += -DVERSION=\""v0.10"\"
+
 targets = cont
 
 cont_objs = cont.o
@@ -11,7 +13,7 @@ cont_objs = cont.o
 all: $(targets)
 clean:
 	rm -f $(toclean)
-install:
+install: $(targets)
 	-$(INSTALL) $(IFLAGS) cont $(bindir)/cont
 	-$(INSTALL) $(IFLAGS) cont.1 $(man1)/cont.1
 
