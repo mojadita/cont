@@ -64,8 +64,8 @@ ssize_t loop(int argc_unused, char **argv)
 		execvp(argv[0], argv);
 
 		fprintf(stderr,
-			F("execv: ERROR %d: %s\n"),
-			errno, strerror(errno));
+			F("execv: %s: ERROR %d: %s\n"),
+			argv[0], errno, strerror(errno));
 		exit(EXIT_FAILURE);
 	} else { /* PARENT PROCESS */
 		pid_t cld_pid = res;
@@ -92,7 +92,8 @@ ssize_t loop(int argc_unused, char **argv)
 		}
 		int status;
 		wait(&status);
-		fclose(f); /* should close fd[1] */
+		fclose(f); /* should close fd[0] */
+		close(fd[0]);
 		if (   WIFEXITED(status)
 			&& WEXITSTATUS(status) == EXIT_SUCCESS) {
 			return lines;
