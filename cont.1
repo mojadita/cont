@@ -6,7 +6,7 @@
 .Nd a program to run another command continually.
 .Sh SYNOPSIS
 .Nm cont
-.Op Fl eVv
+.Op Fl eVvr
 .Op Fl n Ar times
 .Op Fl t Ar delay_us
 .Ar command
@@ -50,6 +50,11 @@ The number is expressed as a floating point number of seconds
 (decimals allowed).
 .It Fl v
 means be verbose.
+.It Fl e makes
+.Nm
+to capture also the standard error of the program, and
+so, to be able to overwrite it, without making displacements
+to the output on each execution.
 .El
 .Pp
 The program prints at te beginning on

@@ -27,6 +27,7 @@
 #define FLAG_NTIMES		(1<<3)
 #define FLAG_STOP		(1<<4)
 #define FLAG_NOESCAPES	(1<<5)
+#define FLAG_REDSTDERR	(1<<6)
 
 int flags = 0;
 useconds_t delay = 1000000;
@@ -59,7 +60,9 @@ void doVersion(void)
 		"     specified, the program runs until it is interrupted by a signal.\n"
 		"  -t Allows to set a different time between runs.  timespec is\n"
 		"     specified as a decimal number of seconds (dot and decimals is\n"
-		"     allowed) with a usec resolution.\n");
+		"     allowed) with a usec resolution.\n"
+		"  -r Allows to catch also the stderr of the command, so in case it\n"
+		"     generates errors, it is also overwritten by the next execution\n");
 	exit(EXIT_SUCCESS);
 }
 
@@ -78,6 +81,8 @@ ssize_t loop(int argc_unused, char **argv)
 	} else if (res == 0) { /* CHILD PROCESS */
 		close(fd[0]); /* not going to use it */
 		dup2( fd[1], 1); /* redirect output to pipe */
+		if (flags & FLAG_REDSTDERR)
+			dup2( fd[1], 2); /* redirect stderr of child */
 		close(fd[1]);
 
 		execvp(argv[0], argv);
@@ -130,7 +135,7 @@ int main(int argc, char **argv)
 	int opt;
 	float t;
 
-	while ((opt = getopt(argc, argv, "Ven:t:v")) >= 0) {
+	while ((opt = getopt(argc, argv, "Venr:t:v")) >= 0) {
 		switch(opt) {
 		case 'V': flags |= FLAG_VERSION;
 				  break;
@@ -143,6 +148,8 @@ int main(int argc, char **argv)
 				  t = atof(optarg);
 				  break;
 		case 'v': flags |= FLAG_VERBOSE;
+				  break;
+		case 'r': flags |= FLAG_REDSTDERR;
 				  break;
 		/* ... */
 		}
