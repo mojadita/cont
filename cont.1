@@ -6,9 +6,10 @@
 .Nd a program to run another command continually.
 .Sh SYNOPSIS
 .Nm cont
-.Op Fl eVvr
+.Op Fl erpVv
 .Op Fl n Ar times
 .Op Fl t Ar delay_us
+.Op Fl -
 .Ar command
 .Op Ar arguments ...
 .Sh DESCRIPTION
@@ -41,6 +42,17 @@ makes the command to execute
 times the command and stop.
 Default is to run indefinitely without stopping.
 If not used, the program runs until stopped by an interruption.
+.It Fl p
+Makes
+.Nm
+to emit a small progres bar symbol rotating at bottom of the
+output.
+.It Fl r
+makes
+.Nm
+to capture also the standard error of the program, and
+so, to be able to overwrite it, without making displacements
+to the output on each execution.
 .It Fl t Ar delay_us
 permits to run the program with an inter execution delay
 of
@@ -50,12 +62,6 @@ The number is expressed as a floating point number of seconds
 (decimals allowed).
 .It Fl v
 means be verbose.
-.It Fl r
-makes
-.Nm
-to capture also the standard error of the program, and
-so, to be able to overwrite it, without making displacements
-to the output on each execution.
 .El
 .Pp
 The program prints at te beginning on

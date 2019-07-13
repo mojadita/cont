@@ -28,6 +28,7 @@
 #define FLAG_STOP		(1<<4)
 #define FLAG_NOESCAPES	(1<<5)
 #define FLAG_REDSTDERR	(1<<6)
+#define FLAG_PROGRESS	(1<<7)
 
 int flags = 0;
 useconds_t delay = 1000000;
@@ -48,21 +49,23 @@ void doVersion(void)
 		"  License: BSD\n"
 		"Usage: cont [ -Vev ] [ -n num ] [ -t timespec ] command [ args ... ]\n"
 		"Where:\n"
-		"  -V indicates to show the version string for the program.  It shows\n"
-		"     this screen.\n"
 		"  -e disables the output of escape sequences.  The program limits to\n"
 		"     execute and pass the whole output to stdout.  No interspersion\n"
 		"     of escapes is done.\n"
-		"  -v Be verbose.  The program output on stderr the command about to \n"
-		"     be executed, and once it end (after all executions) shows the\n"
-		"     total number of lines and executions that has made.\n"
 		"  -n makes only `num' executions and ends after all.  If not\n"
 		"     specified, the program runs until it is interrupted by a signal.\n"
+		"  -p shows a progress symbol rotating at bottom of output.\n"
+		"  -r Allows to catch also the stderr of the command, so in case it\n"
+		"     generates errors, it is also overwritten by the next execution\n"
 		"  -t Allows to set a different time between runs.  timespec is\n"
 		"     specified as a decimal number of seconds (dot and decimals is\n"
 		"     allowed) with a usec resolution.\n"
-		"  -r Allows to catch also the stderr of the command, so in case it\n"
-		"     generates errors, it is also overwritten by the next execution\n");
+		"  -V indicates to show the version string for the program.  It shows\n"
+		"     this screen.\n"
+		"  -v Be verbose.  The program output on stderr the command about to \n"
+		"     be executed, and once it end (after all executions) shows the\n"
+		"     total number of lines and executions that has made.\n"
+		);
 	exit(EXIT_SUCCESS);
 }
 
@@ -100,19 +103,17 @@ ssize_t loop(int argc_unused, char **argv)
 		while((c = fgetc(f)) != EOF) {
 			if (c == '\n') {
 				lines++;
-				fflush(stdout);
 				if (!(flags & FLAG_NOESCAPES)) {
 					/* DELETE TO END OF LINE */
-					fputs("\033[K", stderr);
-					fflush(stderr);
+					fputs("\033[K", stdout);
 				}
 			}
 			putc(c, stdout);
 		}
 		if (!(flags & FLAG_NOESCAPES)) {
 			/* DELETE TO END OF SCREEN */
-			fputs("\033[J", stderr);
-			fflush(stderr);
+			fputs("\033[J", stdout);
+			fflush(stdout);
 		}
 		int status;
 		wait(&status);
@@ -135,21 +136,23 @@ int main(int argc, char **argv)
 	int opt;
 	float t;
 
-	while ((opt = getopt(argc, argv, "Venr:t:v")) >= 0) {
+	while ((opt = getopt(argc, argv, "ern:pt:Vv")) >= 0) {
 		switch(opt) {
-		case 'V': flags |= FLAG_VERSION;
-				  break;
 		case 'e': flags |= FLAG_NOESCAPES;
 				  break;
 		case 'n': flags |= FLAG_NTIMES;
 				  ntimes = atoi(optarg);
 				  break;
+		case 'p': flags |= FLAG_PROGRESS;
+				  break;
+		case 'r': flags |= FLAG_REDSTDERR;
+				  break;
 		case 't': flags |= FLAG_DELAY;
 				  t = atof(optarg);
 				  break;
-		case 'v': flags |= FLAG_VERBOSE;
+		case 'V': flags |= FLAG_VERSION;
 				  break;
-		case 'r': flags |= FLAG_REDSTDERR;
+		case 'v': flags |= FLAG_VERBOSE;
 				  break;
 		/* ... */
 		}
@@ -202,6 +205,13 @@ int main(int argc, char **argv)
 		if (n < 0) {
 			/* we have already written the error */
 			exit(EXIT_FAILURE);
+		}
+
+		if (flags & FLAG_PROGRESS) {
+			static char s[] = "|/-\\";
+			static const size_t n = sizeof(s) - 1;
+			printf("%c", s[total_execs % n]);
+			fflush(stdout);
 		}
 
 		usleep(delay);
