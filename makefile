@@ -4,6 +4,8 @@ bindir ?= $(prefix)/bin
 mandir ?= $(prefix)/man
 man1   ?= $(mandir)/man1
 
+INSTALL ?= install
+
 CFLAGS += -DVERSION=\""v0.10"\"
 
 targets = cont
@@ -17,8 +19,6 @@ install: $(targets)
 	-$(INSTALL) $(IFLAGS) cont $(bindir)/cont
 	-$(INSTALL) $(IFLAGS) cont.1 $(man1)/cont.1
 
-.for t in $(targets)
-toclean += $t $($t_objs)
-$t: $($t_deps) $($t_objs)
-	$(CC) $(CFLAGS) -o $@ $($t_objs) $($t_ldflags) $($t_libs) $(LIBS)
-.endfor
+toclean += cont $(cont_objs)
+cont: $(cont_deps) $(cont_objs)
+	$(CC) $(CFLAGS) -o $@ $(cont_objs) $(cont_ldflags) $(cont_libs) $(LIBS)
