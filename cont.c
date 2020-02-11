@@ -195,15 +195,17 @@ int main(int argc, char **argv)
 	while(cont && (!(flags & FLAG_NTIMES) || ntimes--)) {
 
 		/* move up as many lines as input from subcommand */
-		if (n && !(flags & FLAG_NOESCAPES)) {
-			fprintf(stderr, "\r\033[%uA", (unsigned) n);
-			fflush(stderr);
+		if (!(flags & FLAG_NOESCAPES)) {
+			fprintf(stderr, "\r");
+			if (n)
+				fprintf(stderr, "\033[%uA", (unsigned) n);
+			fflush(stderr); /* not needed, but doesn't hurt */
 		}
 
 		n = loop(argc, argv);
 
 		if (n < 0) {
-			/* we have already written the error */
+			/* we have already written the error in loop() */
 			exit(EXIT_FAILURE);
 		}
 
