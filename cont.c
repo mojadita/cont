@@ -5,6 +5,7 @@
  * License: BSD
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <getopt.h>
@@ -75,13 +76,13 @@ ssize_t loop(int argc_unused, char **argv)
 	int res = pipe(fd);
 
 	res = fork();
-	if (res < 0) {
+	if (res < 0) {				/* FORK ERROR */
 		fprintf(stderr,
 			F("fork: ERROR %d: %s\n"),
 			errno,
 			strerror(errno));
 		return -1;
-	} else if (res == 0) { /* CHILD PROCESS */
+	} else if (res == 0) {		/* CHILD PROCESS */
 		close(fd[0]); /* not going to use it */
 		dup2( fd[1], 1); /* redirect output to pipe */
 		if (flags & FLAG_REDSTDERR)
@@ -93,8 +94,8 @@ ssize_t loop(int argc_unused, char **argv)
 		fprintf(stderr,
 			F("execv: %s: ERROR %d: %s\n"),
 			argv[0], errno, strerror(errno));
-		exit(EXIT_FAILURE);
-	} else { /* PARENT PROCESS */
+		exit(EXIT_FAILURE); /* DON'T RETURN */
+	} else {					/* PARENT PROCESS */
 		pid_t cld_pid = res;
 		close(fd[1]); /* no writing to the pipe */
 		FILE *f = fdopen(fd[0], "rt"); /* just reading */
@@ -116,19 +117,31 @@ ssize_t loop(int argc_unused, char **argv)
 			fflush(stdout);
 		}
 		int status;
-		wait(&status);
+		res = wait(&status);
 		fclose(f); /* should close fd[0] */
-		close(fd[0]);
-		if (   WIFEXITED(status)
+		if (   res >= 0
+			&& WIFEXITED(status)
 			&& WEXITSTATUS(status) == EXIT_SUCCESS) {
-			return lines;
+			assert(res == cld_pid);
+			return lines;						/* CORRECT RETURN */
 		} else {
-			fprintf(stderr,
-				F("child process exited with code = %d\n"),
-				WEXITSTATUS(status));
-			return -1;
-		}
-	}
+			if (res < 0) {						/* wait error */
+				fprintf(stderr,
+					F("WAIT: %s\n"),
+					strerror(errno));
+			} else if (!WIFEXITED(status)) {	/* child was killed */
+				fprintf(stderr,
+					F("child process %d got interrupt %d\n"),
+					cld_pid, WTERMSIG(status));
+			} else {							/* exit status was not
+												 * EXIT_SUCCESS */
+				fprintf(stderr,
+					F("child process %d exited with code = %d\n"),
+					cld_pid, WEXITSTATUS(status));
+			}
+			return -1;							/* ERROR RETURN */
+		} /* else */
+	} /* PARENT PROCESS */
 } /* loop */
 
 int main(int argc, char **argv)
@@ -187,7 +200,6 @@ int main(int argc, char **argv)
 	}
 
 	signal(SIGINT, handler);
-	signal(SIGHUP, handler);
 
 	size_t total_lines = 0;
 	size_t total_execs = 0;
