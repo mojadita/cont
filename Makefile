@@ -11,6 +11,7 @@ CFLAGS += -DVERSION=\""v0.10"\"
 targets = cont
 
 cont_objs = cont.o
+cont_libs = -ltermcap
 
 all: $(targets)
 clean:

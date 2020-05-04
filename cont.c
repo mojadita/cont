@@ -16,6 +16,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include <curses.h>
+#include <term.h>
+
 #define F(_fmt) "%s:%d: " _fmt, __FILE__, __LINE__
 
 #ifndef VERSION
@@ -35,11 +38,20 @@ int flags = 0;
 useconds_t delay = 1000000;
 size_t ntimes;
 
+static char *cont_cur_up = "[[[CONT_CUR_UP]]]";
+static char *cont_clr_eol = "[[[CONT_CLR_EOL]]]";
+static char *cont_clr_eos = "[[[CONT_CLR_EOS]]]";
+
 volatile int cont = 1;
 
 void handler()
 {
     cont = 0;
+}
+
+int cont_putc(int c)
+{
+	return fputc(c, stderr);
 }
 
 void doVersion(void)
@@ -100,20 +112,20 @@ ssize_t loop(int argc_unused, char **argv)
         close(fd[1]); /* no writing to the pipe */
         FILE *f = fdopen(fd[0], "rt"); /* just reading */
         int c;
-        size_t lines = 0; /* need to count lines */
+        size_t n_lines = 0; /* need to count lines */
         while((c = fgetc(f)) != EOF) {
             if (c == '\n') {
-                lines++;
+                n_lines++;
                 if (!(flags & FLAG_NOESCAPES)) {
                     /* DELETE TO END OF LINE */
-                    fputs("\033[K", stdout);
+                    tputs(cont_clr_eol, 1, cont_putc);
                 }
             }
             putc(c, stdout);
         }
         if (!(flags & FLAG_NOESCAPES)) {
             /* DELETE TO END OF SCREEN */
-            fputs("\033[J", stdout);
+            tputs(cont_clr_eos, 1, cont_putc);
             fflush(stdout);
         }
         int status;
@@ -123,7 +135,7 @@ ssize_t loop(int argc_unused, char **argv)
             && WIFEXITED(status)
             && WEXITSTATUS(status) == EXIT_SUCCESS) {
             assert(res == cld_pid);
-            return lines;                       /* CORRECT RETURN */
+            return n_lines;                       /* CORRECT RETURN */
         } else {
             if (res < 0) {                      /* wait error */
                 fprintf(stderr,
@@ -180,7 +192,8 @@ int main(int argc, char **argv)
     argv += optind; /* advance the pointer to the proper place */
 
     if (!argc) {
-        fprintf(stderr, F("ERROR: no command specified\n"));
+        fprintf(stderr,
+			F("ERROR: no command specified\n"));
         exit(EXIT_FAILURE);
     }
 
@@ -199,6 +212,18 @@ int main(int argc, char **argv)
         delay = t * 1.0E6;
     }
 
+	if (setupterm(NULL, 1, &opt) != OK) {
+		fprintf(stderr,
+			F("ERROR initializing termcap "
+				"(setterm() => %d)\n"),
+			opt);
+		exit(EXIT_FAILURE);
+	}
+
+	cont_cur_up = tgetstr("UP", NULL);
+	cont_clr_eol = tgetstr("cd", NULL);
+	cont_clr_eos = tgetstr("ce", NULL);
+
     signal(SIGINT, handler);
 
     size_t total_lines = 0;
@@ -209,9 +234,10 @@ int main(int argc, char **argv)
         /* move up as many lines as input from subcommand */
         if (!(flags & FLAG_NOESCAPES)) {
             fprintf(stderr, "\r");
-            if (n)
-                fprintf(stderr, "\033[%uA", (unsigned) n);
-            fflush(stderr); /* not needed, but doesn't hurt */
+            if (n) {
+				tputs(tiparm(cont_cur_up, n),
+					n, cont_putc);
+			}
         }
 
         n = loop(argc, argv);
@@ -222,7 +248,7 @@ int main(int argc, char **argv)
         }
 
         if (flags & FLAG_PROGRESS) {
-            static char s[] = "|/-\\";
+            static char s[] = "|/-\\|(|)";
             static const size_t n = sizeof(s) - 1;
             printf("%c", s[total_execs % n]);
             fflush(stdout);
@@ -234,6 +260,7 @@ int main(int argc, char **argv)
         total_execs++;
     }
     if (flags & FLAG_VERBOSE) {
+		tputs("\r", 1, cont_putc);
         fprintf(stderr,
             F("Total lines: %lu\n"),
             (unsigned long) total_lines);
