@@ -248,7 +248,7 @@ int main(int argc, char **argv)
         }
 
         if (flags & FLAG_PROGRESS) {
-            static char s[] = "|/-\\|(|)";
+            static char s[] = "|/-\\|/-\\|(|)|\\-/|)|(|\\-/|(|)|/-\\|(|)";
             static const size_t n = sizeof(s) - 1;
             printf("%c", s[total_execs % n]);
             fflush(stdout);
