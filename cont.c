@@ -49,11 +49,6 @@ void handler()
     cont = 0;
 }
 
-int cont_putc(int c)
-{
-	return fputc(c, stderr);
-}
-
 void doVersion(void)
 {
     fprintf(stderr,
@@ -95,10 +90,10 @@ ssize_t loop(int argc_unused, char **argv)
             strerror(errno));
         return -1;
     } else if (res == 0) {      /* CHILD PROCESS */
-        close(fd[0]); /* not going to use it */
-        dup2( fd[1], 1); /* redirect output to pipe */
+        close(fd[0]);           /* not going to use it */
+        dup2( fd[1], 1);        /* redirect output to pipe */
         if (flags & FLAG_REDSTDERR)
-            dup2( fd[1], 2); /* redirect stderr of child */
+            dup2(fd[1], 2);     /* redirect stderr of child */
         close(fd[1]);
 
         execvp(argv[0], argv);
@@ -106,7 +101,7 @@ ssize_t loop(int argc_unused, char **argv)
         fprintf(stderr,
             F("execv: %s: ERROR %d: %s\n"),
             argv[0], errno, strerror(errno));
-        exit(EXIT_FAILURE); /* DON'T RETURN */
+        exit(EXIT_FAILURE);     /* DON'T RETURN */
     } else {                    /* PARENT PROCESS */
         pid_t cld_pid = res;
         close(fd[1]); /* no writing to the pipe */
@@ -118,14 +113,14 @@ ssize_t loop(int argc_unused, char **argv)
                 n_lines++;
                 if (!(flags & FLAG_NOESCAPES)) {
                     /* DELETE TO END OF LINE */
-                    tputs(cont_clr_eol, 1, cont_putc);
+                    tputs(cont_clr_eol, 1, putchar);
                 }
             }
-            putc(c, stdout);
+            putchar(c);
         }
         if (!(flags & FLAG_NOESCAPES)) {
             /* DELETE TO END OF SCREEN */
-            tputs(cont_clr_eos, 1, cont_putc);
+            tputs(cont_clr_eos, 1, putchar);
             fflush(stdout);
         }
         int status;
@@ -193,7 +188,7 @@ int main(int argc, char **argv)
 
     if (!argc) {
         fprintf(stderr,
-			F("ERROR: no command specified\n"));
+            F("ERROR: no command specified\n"));
         exit(EXIT_FAILURE);
     }
 
@@ -212,17 +207,17 @@ int main(int argc, char **argv)
         delay = t * 1.0E6;
     }
 
-	if (setupterm(NULL, 1, &opt) != OK) {
-		fprintf(stderr,
-			F("ERROR initializing termcap "
-				"(setterm() => %d)\n"),
-			opt);
-		exit(EXIT_FAILURE);
-	}
+    if (setupterm(NULL, 1, &opt) != OK) {
+        fprintf(stderr,
+            F("ERROR initializing termcap "
+                "(setterm() => %d)\n"),
+            opt);
+        exit(EXIT_FAILURE);
+    }
 
-	cont_cur_up = tgetstr("UP", NULL);
-	cont_clr_eol = tgetstr("cd", NULL);
-	cont_clr_eos = tgetstr("ce", NULL);
+    cont_cur_up  = tgetstr("UP", NULL);
+    cont_clr_eol = tgetstr("ce", NULL);
+    cont_clr_eos = tgetstr("cd", NULL);
 
     signal(SIGINT, handler);
 
@@ -235,9 +230,9 @@ int main(int argc, char **argv)
         if (!(flags & FLAG_NOESCAPES)) {
             fprintf(stderr, "\r");
             if (n) {
-				tputs(tiparm(cont_cur_up, n),
-					n, cont_putc);
-			}
+                tputs(tiparm(cont_cur_up, n),
+                    n, putchar);
+            }
         }
 
         n = loop(argc, argv);
@@ -260,7 +255,7 @@ int main(int argc, char **argv)
         total_execs++;
     }
     if (flags & FLAG_VERBOSE) {
-		tputs("\r", 1, cont_putc);
+        tputs("\r", 1, putchar);
         fprintf(stderr,
             F("Total lines: %lu\n"),
             (unsigned long) total_lines);
