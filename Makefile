@@ -17,6 +17,8 @@ all: $(targets)
 clean:
 	rm -f $(toclean)
 install: $(targets)
+	-$(INSTALL) $(IFLAGS) -d $(bindir)
+	-$(INSTALL) $(IFLAGS) -d $(man1)
 	-$(INSTALL) $(IFLAGS) cont $(bindir)/cont
 	-$(INSTALL) $(IFLAGS) cont.1 $(man1)/cont.1
 
