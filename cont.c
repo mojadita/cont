@@ -109,6 +109,7 @@ ssize_t loop(int argc_unused, char **argv)
         int c;
         size_t n_lines = 0; /* need to count lines */
         while((c = fgetc(f)) != EOF) {
+            putchar(c);
             if (c == '\n') {
                 n_lines++;
                 if (!(flags & FLAG_NOESCAPES)) {
@@ -116,7 +117,6 @@ ssize_t loop(int argc_unused, char **argv)
                     tputs(cont_clr_eol, 1, putchar);
                 }
             }
-            putchar(c);
         }
         if (!(flags & FLAG_NOESCAPES)) {
             /* DELETE TO END OF SCREEN */
