@@ -5,7 +5,7 @@
 
 RM     ?= rm -f
 
-prefix ?= $(HOME)
+prefix ?= /usr/local
 
 bindir ?= $(prefix)/bin
 mandir ?= $(prefix)/man
