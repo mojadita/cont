@@ -6,7 +6,7 @@
 .Nd a program to run another command continually.
 .Sh SYNOPSIS
 .Nm cont
-.Op Fl erpVv
+.Op Fl eripVv
 .Op Fl n Ar times
 .Op Fl t Ar delay_us
 .Op Fl -
@@ -23,9 +23,9 @@ the terminal.
 The different options modify the behaviour of
 the program.  In case you have the necessity of executing a
 command that begins with
-.Li -
+.Op ""
 you will have to end the options list with the normal
-.Li --
+.Op -
 sequence.
 This will separate command options from the command to execute.
 .Bl -tag 
@@ -36,6 +36,13 @@ makes the command to be executed without intervening escape
 sequences (this will make output to accumulate to the
 bottom without any back movement of the cursor to repeat the
 output)
+.It Fl i
+Ignore subprocess errors.  The
+.Nm
+tool continues to execute the subprocess indicated in the command
+line, besides some executions give error codes.  This allows to
+start a program that produces an error when some file doesn't
+still exists.
 .It Fl n Ar times
 makes the command to execute
 .Ar times
