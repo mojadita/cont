@@ -13,7 +13,7 @@ man1   ?= $(mandir)/man1
 
 INSTALL ?= install
 
-CFLAGS += -DVERSION=\""v0.10"\"
+CFLAGS += -DVERSION=\""v0.11"\"
 
 targets = cont
 

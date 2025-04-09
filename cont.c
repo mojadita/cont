@@ -137,7 +137,6 @@ ssize_t loop(int argc_unused, char **argv)
 		 *  o when subprocess has closed it's side of the pipe.
 		 */
         while((c = fgetc(f)) != EOF) {
-            putchar(c);         /* copy to stdout verbatim */
             if (c == '\n') {    /* we count the newlines */
                 n_lines++;
                 if (!(flags & FLAG_NOESCAPES)) {
@@ -147,6 +146,7 @@ ssize_t loop(int argc_unused, char **argv)
                     tputs(cont_clr_eol, 1, putchar);
                 }
             }
+            putchar(c);         /* copy to stdout verbatim */
         }
 
         if (!(flags & FLAG_NOESCAPES)) {
