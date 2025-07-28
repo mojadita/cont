@@ -8,7 +8,8 @@ RM     ?= rm -f
 prefix ?= /usr/local
 
 bindir ?= $(prefix)/bin
-mandir ?= $(prefix)/man
+datarootdir ?= $(prefix)/share
+mandir ?= $(datarootdir)/man
 man1   ?= $(mandir)/man1
 
 INSTALL ?= install
