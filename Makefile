@@ -14,6 +14,14 @@ man1   ?= $(mandir)/man1
 
 INSTALL ?= install
 
+OWN   ?= root
+GRP   ?= bin
+FMOD  ?= 0444
+XMOD  ?= 0111
+DMOD  ?= 0755
+
+IFLAGS ?= -o $(OWN) -g $(GRP)
+
 CFLAGS += -DVERSION=\""v0.11"\"
 
 targets = cont
@@ -26,10 +34,10 @@ clean:
 	rm -f $(toclean)
 
 install: $(targets)
-	-$(INSTALL) $(IFLAGS) -d $(bindir)
-	-$(INSTALL) $(IFLAGS) -d $(man1)
-	-$(INSTALL) $(IFLAGS) cont $(bindir)/cont
-	-$(INSTALL) $(IFLAGS) cont.1 $(man1)/cont.1
+	-$(INSTALL) $(IFLAGS) -m $(DMOD) -d $(bindir)
+	-$(INSTALL) $(IFLAGS) -m $(DMOD) -d $(man1)
+	-$(INSTALL) $(IFLAGS) -m $(XMOD) cont $(bindir)/cont
+	-$(INSTALL) $(IFLAGS) -m $(FMOD) cont.1 $(man1)/cont.1
 
 uninstall:
 	-$(RM) $(bindir)/cont

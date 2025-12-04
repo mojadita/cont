@@ -61,7 +61,7 @@ void doVersion(void)
         "  -e disables the output of escape sequences.  The program limits to\n"
         "     execute and pass the whole output to stdout.  No interspersion\n"
         "     of escapes is done.\n"
-		"  -i ignore errors from subprocess and continue executing it.\n"
+        "  -i ignore errors from subprocess and continue executing it.\n"
         "  -n makes only `num' executions and ends after all.  If not\n"
         "     specified, the program runs until it is interrupted by a signal.\n"
         "  -p shows a progress symbol rotating at bottom of output.\n"
@@ -83,36 +83,36 @@ ssize_t loop(int argc_unused, char **argv)
 {
     int fd[2];
     int res = pipe(fd);
-	if (res < 0) {              /* PIPE ERROR */
-		fprintf(stderr,
-			F("pipe: ERROR %d: %s\n"),
-			errno,
-			strerror(errno));
-		return -1;
-	}
+    if (res < 0) {                         /* PIPE ERROR */
+        fprintf(stderr,
+            F("pipe: ERROR %d: %s\n"),
+            errno,
+            strerror(errno));
+        return -1;
+    }
 
     res = fork();
-    if (res < 0) {              /* FORK ERROR */
+    if (res < 0) {                         /* FORK ERROR */
 
         fprintf(stderr,
             F("fork: ERROR %d: %s\n"),
             errno,
             strerror(errno));
 
-		close(fd[0]);
-		close(fd[1]);           /* throw the pipe */
+        close(fd[0]);
+        close(fd[1]);                      /* throw the pipe */
 
         return -1;
 
-    } else if (res == 0) {      /* CHILD PROCESS */
+    } else if (res == 0) {                 /* CHILD PROCESS */
 
-        close(fd[0]);           /* not going to use it */
+        close(fd[0]);                      /* not going to use it */
 
-        dup2( fd[1], 1);        /* redirect output to pipe */
+        dup2( fd[1], 1);                   /* redirect output to pipe */
         if (flags & FLAG_REDSTDERR) {
-            dup2(fd[1], 2);     /* redirect stderr of child */
-		}
-        close(fd[1]);           /* once dup(), we don't need it */
+            dup2(fd[1], 2);                /* redirect stderr of child */
+        }
+        close(fd[1]);                      /* once dup(), we don't need it */
 
         execvp(argv[0], argv);
 
@@ -120,75 +120,70 @@ ssize_t loop(int argc_unused, char **argv)
             F("execv: %s: ERROR %d: %s\n"),
             argv[0], errno, strerror(errno));
 
-        exit(EXIT_FAILURE);     /* DON'T RETURN */
+        exit(EXIT_FAILURE);                /* DON'T RETURN */
+    }
 
-    } else {                    /* PARENT PROCESS */
+    /* PARENT PROCESS */
+    pid_t cld_pid = res;                   /* CHILD PID */
 
-        pid_t cld_pid = res;
-
-        close(fd[1]);           /* no writing to the pipe */
-
-        FILE *f = fdopen(fd[0], "rt"); /* just reading */
-        int c;
-        size_t n_lines = 0;     /* need to count lines */
-
-		/* copy input to output until EOF, which can happen:
-		 *  o when the subprocess has ended.
-		 *  o when subprocess has closed it's side of the pipe.
-		 */
-        while((c = fgetc(f)) != EOF) {
-            if (c == '\n') {    /* we count the newlines */
-                n_lines++;
-                if (!(flags & FLAG_NOESCAPES)) {
-                    /* DELETE TO END OF LINE.  This eliminates
-					 * the extra chars in case the previous run
-					 * wrote more characters than we do now. */
-                    tputs(cont_clr_eol, 1, putchar);
-                }
+    close(fd[1]);                          /* no writing to the pipe */
+    FILE *f = fdopen(fd[0], "rt"); /* just reading */
+    int c;
+    size_t n_lines = 0;                    /* need to count lines */
+    /* copy input to output until EOF, which can happen:
+     *  o when the subprocess has ended.
+     *  o when subprocess has closed it's side of the pipe.
+     */
+    while((c = fgetc(f)) != EOF) {
+        if (c == '\n') {                   /* we count the newlines */
+            n_lines++;
+            if (!(flags & FLAG_NOESCAPES)) {
+                /* DELETE TO END OF LINE.  This eliminates
+                 * the extra chars in case the previous run
+                 * wrote more characters than we do now. */
+                tputs(cont_clr_eol, 1, putchar);
             }
-            putchar(c);         /* copy to stdout verbatim */
         }
+        putchar(c);                        /* copy to stdout verbatim */
+    } /* while */
+    /* EOF on subcommand output */
+    fclose(f);                             /* should close(fd[0]) */
 
-        if (!(flags & FLAG_NOESCAPES)) {
-            /* DELETE TO END OF SCREEN.
-			 * As we have ended output, in case there's some
-			 * output from previous runs, we erase until end of screen
-			 * to clean the rest of the screen. */
-            tputs(cont_clr_eos, 1, putchar);   /* clear to end of screen */
-            fflush(stdout);
-        }
+    if (!(flags & FLAG_NOESCAPES)) {
+        /* DELETE TO END OF SCREEN.
+         * As we have ended output, in case there's some
+         * output from previous runs, we erase until end of screen
+         * to clean the rest of the screen. */
+        tputs(cont_clr_eos, 1, putchar);   /* clear to end of screen */
+    }
+    fflush(stdout);
 
-        int status;
-        res = wait(&status);
-        fclose(f); /* should close fd[0] */
+    int status;
+    res = wait(&status);
 
-        if (   res >= 0
-            && WIFEXITED(status)
-            && WEXITSTATUS(status) == EXIT_SUCCESS) {
-			/* child ended successfully */
-            assert(res == cld_pid);
-        } else {
+    if (   res >= 0
+        && WIFEXITED(status)
+        && WEXITSTATUS(status) == EXIT_SUCCESS) {
+        /* child ended successfully */
+        assert(res == cld_pid);
+        return n_lines;
+    }
 
-            if (res < 0) {                      /* wait error */
-                fprintf(stderr,
-                    F("WAIT: %s\n"),
-                    strerror(errno));
-            } else if (!WIFEXITED(status)) {    /* child was killed */
-                fprintf(stderr,
-                    F("child process %d got interrupt %d\n"),
-                    cld_pid, WTERMSIG(status));
-            } else {                            /* exit status was not
-                                                 * EXIT_SUCCESS */
-                fprintf(stderr,
-                    F("child process %d exited with code = %d\n"),
-                    cld_pid, WEXITSTATUS(status));
-            }
-			if (!(flags & FLAG_IGNOREERROR)) {
-            	return -1;                      /* ERROR RETURN */
-			}
-        } /* if */
-        return n_lines;                         /* CORRECT RETURN */
-    } /* PARENT PROCESS */
+    if (res < 0) {                      /* wait error */
+        fprintf(stderr,
+            F("WAIT: %s\n"),
+            strerror(errno));
+    } else if (!WIFEXITED(status)) {    /* child was killed */
+        fprintf(stderr,
+            F("child process %d got interrupt %d\n"),
+            cld_pid, WTERMSIG(status));
+    } else {                            /* exit status was not
+                                         * EXIT_SUCCESS */
+        fprintf(stderr,
+            F("child process %d exited with code = %d\n"),
+            cld_pid, WEXITSTATUS(status));
+    }
+    return -1;                         /* ERROR RETURN */
 } /* loop */
 
 int main(int argc, char **argv)
@@ -199,7 +194,7 @@ int main(int argc, char **argv)
     while ((opt = getopt(argc, argv, "ern:pt:Vv")) >= 0) {
         switch(opt) {
         case 'e': flags |= FLAG_NOESCAPES;   break;
-		case 'i': flags |= FLAG_IGNOREERROR; break;
+        case 'i': flags |= FLAG_IGNOREERROR; break;
         case 'n': flags |= FLAG_NTIMES;
                   ntimes = atoi(optarg);     break;
         case 'p': flags |= FLAG_PROGRESS;    break;
@@ -214,7 +209,7 @@ int main(int argc, char **argv)
 
     if (flags & FLAG_VERSION) {
         doVersion();
-	}
+    }
 
     /* the next pair of sentences is like `shift optind' in the shell. */
     /* trick, don't move the parameters, just move the pointer */
