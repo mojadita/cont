@@ -3,46 +3,65 @@
 # Date: Sun Sep  8 13:10:15 EEST 2024
 # Copyright: (c) 2024 Luis Colorado.  All rights reserved.
 
-RM     ?= rm -f
+RM            ?= rm -f
 
-prefix ?= /usr/local
+prefix        ?= /usr/local
 
-bindir ?= $(prefix)/bin
-datarootdir ?= $(prefix)/share
-mandir ?= $(datarootdir)/man
-man1   ?= $(mandir)/man1
+OS            != uname -s
 
-INSTALL ?= install
+bindir        ?= $(prefix)/bin
+datarootdir   ?= $(prefix)/share
+mandir        ?= $(datarootdir)/man
+man1dir       ?= $(mandir)/man1
 
-OWN   ?= root
-GRP   ?= bin
-FMOD  ?= 0444
-XMOD  ?= 0111
-DMOD  ?= 0755
+INSTALL       ?= install
 
-IFLAGS ?= -o $(OWN) -g $(GRP)
+OWN-FreeBSD   ?= -o root
+GRP-FreeBSD   ?= -g wheel
 
-CFLAGS += -DVERSION=\""v0.11"\"
+OWN-GNU/Linux ?= -o bin
+GRP-GNU/Linux ?= -g bin
 
-targets = cont
+OWN           ?= $(OWN-$(OS))
+GRP           ?= $(GRP-$(OS))
+FMOD          ?= -m 0444
+XMOD          ?= -m 0111
+DMOD          ?= -m 0755
 
-cont_objs = cont.o
-cont_libs = -ltermcap
+IFLAGS        ?= $(OWN) $(GRP)
+
+CFLAGS        += -DVERSION=\""v0.12"\"
+
+targets        = cont
+
+cont_deps      =
+cont_objs      = cont.o
+cont_libs      = -ltermcap
+cont_ldfl      =
+to_clean      += $(cont_objs)
 
 all: $(targets)
 clean:
-	rm -f $(toclean)
+	rm -f $(to_clean)
 
-install: $(targets)
-	-$(INSTALL) $(IFLAGS) -m $(DMOD) -d $(bindir)
-	-$(INSTALL) $(IFLAGS) -m $(DMOD) -d $(man1)
-	-$(INSTALL) $(IFLAGS) -m $(XMOD) cont $(bindir)/cont
-	-$(INSTALL) $(IFLAGS) -m $(FMOD) cont.1 $(man1)/cont.1
+to_install     = $(bindir)/cont   \
+                 $(man1dir)/cont.1.gz
+to_clean      += cont cont.1.gz
 
-uninstall:
-	-$(RM) $(bindir)/cont
-	-$(RM) $(man1)/cont.1
+install: $(to_install)
 
-toclean += cont $(cont_objs)
+$(bindir)/cont: $(@:T)
+	-$(INSTALL) $(IFLAGS) $(XMOD) $(@:T) $@
+
+$(man1dir)/cont.1.gz: $(@:T)
+	-$(INSTALL) $(IFLAGS) $(FMOD) $(@:T) $@
+
+cont.1.gz: cont.1
+	gzip -v < cont.1 > $@
+
+uninstall remove deinstall:
+	-$(RM) $(to_install)
+
 cont: $(cont_deps) $(cont_objs)
-	$(CC) $(CFLAGS) -o $@ $(cont_objs) $(cont_ldflags) $(cont_libs) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $(cont_objs) \
+		$(cont_ldflags) $(cont_libs) $(LIBS)
