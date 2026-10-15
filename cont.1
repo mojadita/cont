@@ -52,7 +52,7 @@ If not used, the program runs until stopped by an interruption.
 .It Fl p
 Makes
 .Nm
-to emit a small progres bar symbol rotating at bottom of the
+to emit a small progres symbol symbol rotating at bottom of the
 output.
 .It Fl r
 makes
@@ -79,8 +79,8 @@ the program prints the number of executions and the total
 number of lines printed.
 .Pp
 The escape sequences interspersed to achieve the writing on top
-of previous execution are ANSI escape codes for going back N lines
-(emitted between runs),
+of previous execution are terminal dependent escape codes to go
+back N lines (emitted between runs),
 delete from cursor to end of line (emited at the end of each line)
 and delete from cursor to end of screen (emited at the end of the
 run).
